@@ -9,14 +9,23 @@ import qualified Data.Text as T
 import Data.IORef
 import Text.Read (readMaybe)
 
+data Operator = Add | Subtract | Multiply | Divide
+  deriving (Show, Eq)
+
 data CalcState = CalcState
   { calcDisplay :: Text
   , firstOp :: Maybe Double
-  , pendingOp :: Maybe (Double -> Double -> Double)
+  , pendingOp :: Maybe Operator
   }
 
 emptyState :: CalcState
 emptyState = CalcState "" Nothing Nothing
+
+executeOp :: Operator -> Double -> Double -> Double
+executeOp Add      = (+)
+executeOp Subtract = (-)
+executeOp Multiply = (*)
+executeOp Divide   = (/)
 
 main :: IO ()
 main = do
@@ -51,17 +60,17 @@ main = do
   addButton "7" 0 0
   addButton "8" 0 1
   addButton "9" 0 2
-  addOpButton "/" 0 3 (\a b -> if b == 0 then 0 else a / b)
+  addOpButton "/" 0 3 Divide
 
   addButton "4" 1 0
   addButton "5" 1 1
   addButton "6" 1 2
-  addOpButton "*" 1 3 (\a b -> a * b)
-  addOpButton "-" 2 3 (\a b -> a - b)
+  addOpButton "*" 1 3 Multiply
+  addOpButton "-" 2 3 Subtract
   eqBtn <- new Gtk.Button [#label := "="]
   Gtk.gridAttach grid eqBtn 2 3 1 1
   on eqBtn #clicked $ handleEquals entry stVar
-  addOpButton "+" 3 3 (\a b -> a + b)
+  addOpButton "+" 3 3 Add
 
   clearBtn <- new Gtk.Button [#label := "C"]
   Gtk.gridAttach grid clearBtn 0 4 4 1
@@ -86,19 +95,24 @@ handleInput display stRef input = do
   writeIORef stRef st { calcDisplay = newDisplay }
   Gtk.entrySetText display newDisplay
 
-handleOp :: Gtk.Entry -> IORef CalcState -> (Double -> Double -> Double) -> IO ()
+handleOp :: Gtk.Entry -> IORef CalcState -> Operator -> IO ()
 handleOp display stRef op = do
   st <- readIORef stRef
   let currentText = calcDisplay st
   let current = readMaybe (T.unpack currentText) :: Maybe Double
   case (firstOp st, pendingOp st, current) of
-    (Just n, Just oldOp, Just m) -> do
-      let result = oldOp n m
-      Gtk.entrySetText display (T.pack (show result))
-      writeIORef stRef (st {firstOp = Just result, pendingOp = Just op, calcDisplay = ""})
     (Nothing, _, Just n) -> do
-      writeIORef stRef (st {firstOp = Just n, pendingOp = Just op, calcDisplay = ""})
+      writeIORef stRef (st { firstOp = Just n, pendingOp = Just op, calcDisplay = "" })
       Gtk.entrySetText display ""
+    (Just n, Just prevOp, Just m) -> do
+      if prevOp == Divide && m == 0
+        then do
+          Gtk.entrySetText display "Error: division by zero"
+          writeIORef stRef (st { firstOp = Nothing, pendingOp = Nothing, calcDisplay = "" })
+        else do
+          let result = executeOp prevOp n m
+          Gtk.entrySetText display (T.pack (show result))
+          writeIORef stRef (st { firstOp = Just result, pendingOp = Just op, calcDisplay = "" })
     _ -> return ()
 
 handleEquals :: Gtk.Entry -> IORef CalcState -> IO ()
@@ -108,8 +122,13 @@ handleEquals display stRef = do
   let current = readMaybe (T.unpack currentText) :: Maybe Double
   case (firstOp st, pendingOp st, current) of
     (Just n, Just op, Just m) -> do
-      let result = op n m
-      let resultText = T.pack (show result)
-      Gtk.entrySetText display resultText
-      writeIORef stRef (emptyState { calcDisplay = resultText })
+      if op == Divide && m == 0
+        then do
+          Gtk.entrySetText display "Error: division by zero"
+          writeIORef stRef (st { firstOp = Nothing, pendingOp = Nothing, calcDisplay = "" })
+        else do
+          let result = executeOp op n m
+          let resultText = T.pack (show result)
+          Gtk.entrySetText display resultText
+          writeIORef stRef (emptyState { calcDisplay = resultText })
     _ -> return ()
