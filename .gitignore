@@ -1,0 +1,5 @@
+calculator
+dist-newstyle/
+*.o
+*.hi
+.cabal-sandbox/
