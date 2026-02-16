@@ -66,6 +66,13 @@ main = do
   addButton "5" 1 1
   addButton "6" 1 2
   addOpButton "*" 1 3 Multiply
+
+  addButton "1" 2 0
+  addButton "2" 2 1
+  addButton "3" 2 2
+  addOpButton "-" 2 3 Subtract
+
+  addButton "0" 3 0
   addOpButton "-" 2 3 Subtract
   eqBtn <- new Gtk.Button [#label := "="]
   Gtk.gridAttach grid eqBtn 2 3 1 1
