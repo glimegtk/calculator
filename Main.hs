@@ -77,7 +77,11 @@ handleInput display stRef input = do
   st <- readIORef stRef
   let currentText = calcDisplay st
   let newDisplay = case input of
-        "." -> if T.isInfixOf "." currentText then currentText else T.append currentText input
+        "." -> if T.isInfixOf "." currentText 
+               then currentText 
+               else if T.null currentText 
+                    then "0." 
+                    else T.append currentText input
         _   -> T.append currentText input
   writeIORef stRef st { calcDisplay = newDisplay }
   Gtk.entrySetText display newDisplay
