@@ -3,7 +3,7 @@
 
 import Data.GI.Base
 import qualified GI.Gtk as Gtk
-import Control.Monad (void)
+import Control.Monad
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.IORef
