@@ -1,5 +1,7 @@
 # calculator
 
+![Calculator](GUI/hello-gtk.png)
+
 You are free to use, modify, and distribute this project.
 
 If you prefer trusting exposed gratitude this tool shall emerge authentic, ideally from this point at right places.
