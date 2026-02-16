@@ -58,7 +58,9 @@ main = do
   addButton "6" 1 2
   addOpButton "*" 1 3 (\a b -> Just (a * b))
   addOpButton "-" 2 3 (\a b -> Just (a - b))
-  addOpButton "=" 3 2 (\a _ -> Just a)
+  eqBtn <- new Gtk.Button [#label := "="]
+  Gtk.gridAttach grid eqBtn 2 3 1 1
+  on eqBtn #clicked $ handleEquals entry stVar
   addOpButton "+" 3 3 (\a b -> Just (a + b))
 
   clearBtn <- new Gtk.Button [#label := "C"]
@@ -93,6 +95,21 @@ handleOp display stRef op = do
       Just result -> do
         Gtk.entrySetText display (T.pack (show result))
         writeIORef stRef st { firstOp = Just result, pendingOp = Just op, calcDisplay = "" }
+      Nothing -> do
+        Gtk.entrySetText display "Error: division by zero"
+        writeIORef stRef st { firstOp = Nothing, pendingOp = Nothing, calcDisplay = "" }
+    _ -> return ()
+
+handleEquals :: Gtk.Entry -> IORef CalcState -> IO ()
+handleEquals display stRef = do
+  st <- readIORef stRef
+  let currentText = calcDisplay st
+  let current = readMaybe (T.unpack currentText) :: Maybe Double
+  case (firstOp st, current, pendingOp st) of
+    (Just n, Just m, Just op) -> case op n m of
+      Just result -> do
+        Gtk.entrySetText display (T.pack (show result))
+        writeIORef stRef st { firstOp = Just result, calcDisplay = "" }
       Nothing -> do
         Gtk.entrySetText display "Error: division by zero"
         writeIORef stRef st { firstOp = Nothing, pendingOp = Nothing, calcDisplay = "" }
