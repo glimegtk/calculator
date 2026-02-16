@@ -95,13 +95,15 @@ handleOp display stRef op = do
     (Nothing, Just n) -> do
       writeIORef stRef st { firstOp = Just n, pendingOp = Just op, calcDisplay = "" }
       Gtk.entrySetText display ""
-    (Just n, Just m) -> case op n m of
-      Just result -> do
-        Gtk.entrySetText display (T.pack (show result))
-        writeIORef stRef st { firstOp = Just result, pendingOp = Just op, calcDisplay = "" }
-      Nothing -> do
-        Gtk.entrySetText display "Error: division by zero"
-        writeIORef stRef st { firstOp = Nothing, pendingOp = Nothing, calcDisplay = "" }
+    (Just n, Just m) -> case pendingOp st of
+      Just storedOp -> case storedOp n m of
+        Just result -> do
+          Gtk.entrySetText display (T.pack (show result))
+          writeIORef stRef st { firstOp = Just result, pendingOp = Just op, calcDisplay = "" }
+        Nothing -> do
+          Gtk.entrySetText display "Error: division by zero"
+          writeIORef stRef st { firstOp = Nothing, pendingOp = Nothing, calcDisplay = "" }
+      Nothing -> return ()
     _ -> return ()
 
 handleEquals :: Gtk.Entry -> IORef CalcState -> IO ()
