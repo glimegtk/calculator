@@ -49,12 +49,8 @@ jobs:
       - name: Create ZIP
         run: zip -r Calculator.zip Calculator.app
 
-      - name: Upload Release Asset
-        uses: softprops/action-gh-release@v1
-        with:
-          files: Calculator.zip
-          tag_name: ${{ github.ref_name }}
-          name: Calculator v${{ github.ref_name }}
-          body: Download the macOS app bundle
+      - name: Create Release
+        run: |
+          gh release create "${{ github.ref_name }}" Calculator.zip --title "Calculator ${{ github.ref_name }}" --notes "Download the macOS app bundle"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
