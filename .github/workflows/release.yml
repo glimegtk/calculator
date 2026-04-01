@@ -13,15 +13,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Haskell
-        uses: actions/setup-haskell@v1
-        with:
-          ghc-version: '9.10'
-          cabal-version: '3.16.1.0'
-
       - name: Install dependencies
-        run: brew install gtk4 gobject-introspection
-
+        run: |
+          brew install ghc cabal-install gtk4 gobject-introspection
+          cabal update
+      
       - name: Build
         run: cabal build hello-gtk
 
