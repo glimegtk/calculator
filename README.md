@@ -73,8 +73,14 @@ To run:
 cabal run hello-gtk
 ```
 
+Or create an app bundle for macOS:
+```
+./scripts/create-bundle.sh
+open Calculator.app
+```
+
 Or run the binary directly:
 
 ```
-./dist-newstyle/build/aarch64-osx/ghc-9.14.1/hello-gtk-0.1.0.0/x/hello-gtk/build/hello-gtk/hello-gtk
+$(cabal list-bin hello-gtk)
 ```

@@ -30,7 +30,10 @@ executeOp Divide   = (/)
 
 main :: IO ()
 main = do
-  app <- new Gtk.Application [#applicationId := "com.example.Calculator"]
+  app <- new Gtk.Application 
+    [ #applicationId := "com.example.Calculator"
+    , #registerSession := True
+    ]
   on app #activate $ activateApp app
   void $ Gio.applicationRun app Nothing
 
@@ -43,14 +46,6 @@ activateApp app = do
     , #marginStart := 16
     , #marginEnd := 16
     , #spacing := 12
-    ]
-
-  win <- new Gtk.ApplicationWindow 
-    [ #application := app
-    , #title := "Calculator"
-    , #defaultWidth := 350
-    , #defaultHeight := 500
-    , #child := box
     ]
 
   displayBox <- new Gtk.Box
@@ -73,6 +68,16 @@ activateApp app = do
 
   grid <- new Gtk.Grid [#rowSpacing := 8, #columnSpacing := 8]
   #append box grid
+
+  win <- new Gtk.ApplicationWindow 
+    [ #application := app
+    , #title := "Calculator"
+    , #defaultWidth := 350
+    , #defaultHeight := 500
+    , #child := box
+    ]
+
+  #present win
 
   stVar <- newIORef emptyState
 
@@ -166,6 +171,8 @@ handleOp display stRef op = do
           let result = executeOp prevOp n m
           #setLabel display (T.pack (show result))
           writeIORef stRef (st { firstOp = Just result, pendingOp = Just op, calcDisplay = "" })
+    (Just _, Just _, Nothing) -> do
+      writeIORef stRef (st { pendingOp = Just op })
     _ -> return ()
 
 handleEquals :: Gtk.Label -> IORef CalcState -> IO ()
