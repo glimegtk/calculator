@@ -10,85 +10,74 @@
 
 **Tracked by:** [glimegtk](https://github.com/glimegtk)
 
-| New | Old |
-|:---:|:---:|
-| <img src="https://raw.githubusercontent.com/bniladridas/calculator/main/GUI/calculator-gtk4-new.png" width="150"> | <img src="https://raw.githubusercontent.com/bniladridas/calculator/main/GUI/calculator-gtk4-old.png" width="150"> |
+A small calculator built with `haskell-gi`, `GTK4`, and `Gio`.
 
-You are free to use, modify, and distribute this project.
+## Screenshots
 
-I'll use haskell-gi with GTK4.
+| Main Window | About Dialog |
+|:--:|:--:|
+| <img src="https://raw.githubusercontent.com/bniladridas/calculator/main/GUI/calculator-main-window.png" width="260"> | <img src="https://raw.githubusercontent.com/bniladridas/calculator/main/GUI/calculator-about-dialog.png" width="260"> |
 
-# Check if GHC and Cabal are installed
-$ which ghc && ghc --version && which cabal
+| App In Applications |
+|:--:|
+| <img src="https://raw.githubusercontent.com/bniladridas/calculator/main/GUI/calculator-applications-view.png" width="520"> |
 
-On macOS, the easiest way is to use ghcup. Let me install GHC using ghcup.
+## Build
 
-# Check if Homebrew is installed
-$ which brew
-/opt/homebrew/bin/brew
+On macOS, install the toolchain and GTK dependencies first:
 
-1. First install GHC (Glasgow Haskell Compiler) - likely using ghcup or homebrew
-2. Then create the GTK application
-
-# Check if ghcup is installed
-$ which ghcup
-ghcup not found
-
-# Install GHC, cabal, GTK4 and dependencies
-
-```
-$ brew install ghc cabal-install gtk4 gobject-introspection
-==> Auto-updating Homebrew...
-Adjust how often this is run with `$HOMEBREW_AUTO_UPDATE_SECS` or disable this behaviour by setting `HOMEBREW_NO_INSTALL_CLEANUP=1`. Hide these hints by setting `HOMEBREW_NO_ENV_HINTS=1` (see `man brew`).
-==> Auto-updated Homebrew!
-Updated 2 taps (homebrew/core and homebrew/cask).
-==> New Formulae
-copilot-language-server: Terminal-based AI coding assistant
-nextpnr-ice40: Portable FPGA place and route tool for Lattice iCE40
-opentimestamps-client: Create and verify OpenTimestamps proofs
-proxelar: Minimal HTTP/HTTPS pastebin
-==> New Casks
-claude-code@latest: Terminal-based AI coding assistant
-font-bj-cree
-font-saira-stencil
-jiba: Apple Music metadata localisation tool
-proton-meet: Desktop client for Proton Meet
-wallspace: Live wallpaper
-
-You have 30 outdated formulae and 2 outdated casks installed.
-
-==> Fetching downloads for: ghc and cabal-install
-✔︎ Bottle Manifest ghc (9.14.1)
-✔︎ Bottle Manifest cabal-install (3.16.1.0)
-✔︎ Bottle cabal-install (3.16.1.0)
-✔︎ Bottle ghc (9.14.1)
-==> Pouring ghc--9.14.1.arm64_tahoe.bottle.tar.gz
-==> /opt/homebrew/Cellar/ghc/9.14.1/bin/ghc-pkg recache
-🍺  /opt/homebrew/Cellar/ghc/9.14.1: 9,400 files, 2.2GB
-==> Running `brew cleanup ghc`...
-Disable this behaviour by setting `HOMEBREW_NO_INSTALL_CLEANUP=1`.
-Hide these hints by setting `HOMEBREW_NO_ENV_HINTS=1` (see `man brew`).
-==> Pouring cabal-install--3.16.1.0.arm64_tahoe.bottle.1.tar.gz
-🍺  /opt/homebrew/Cellar/cabal-install/3.16.1.0: 8 files, 97.9MB
-==> Running `brew cleanup cabal-install`...
+```sh
+brew install ghc cabal-install gtk4 gobject-introspection
 ```
 
-The executable is ready at `dist-newstyle/.../hello-gtk.`
+Then build or run the app:
 
-To run:
-
-```
+```sh
+cabal build hello-gtk
 cabal run hello-gtk
 ```
 
-Or create an app bundle for macOS:
+You can also run the built binary directly:
+
+```sh
+$(cabal list-bin hello-gtk)
 ```
+
+## macOS Bundle
+
+Create the app bundle with:
+
+```sh
 ./scripts/create-bundle.sh
 open Calculator.app
 ```
 
-Or run the binary directly:
+The bundle script now handles the macOS-specific packaging details that caused the earlier issues:
 
-```
-$(cabal list-bin hello-gtk)
-```
+- it writes the correct bundle metadata instead of the old `com.example.Calculator` placeholder
+- it uses `CFBundleIconFile = icon.icns` for Finder, Dock, and Launchpad
+- it keeps a separate `icon.png` in the bundle resources for the in-app About dialog
+- it rebuilds the `.app` from scratch so stale resources do not leak into a new bundle
+
+The bundle icon source is [`GUI/icon.icns`](GUI/icon.icns), and the About dialog logo comes from [`GUI/app-icon.png`](GUI/app-icon.png).
+
+## About And Settings Fix
+
+The macOS app menu originally showed disabled `About Calculator` and `Settings...` items because the application did not register those actions. The GTK app now installs explicit `Gio.SimpleAction`s for:
+
+- `app.about`
+- `app.preferences`
+- `app.quit`
+
+That fixed two user-visible problems:
+
+- `About Calculator` now opens a real GTK About dialog with version, repo link, and logo
+- `Settings...` now opens a GTK settings window instead of staying disabled
+
+The relevant logic is in [`Main.hs`](Main.hs).
+
+## Project Files
+
+- [`Main.hs`](Main.hs): GTK application, calculator UI, app actions
+- [`scripts/create-bundle.sh`](scripts/create-bundle.sh): macOS `.app` packaging
+- [`hello-gtk.cabal`](hello-gtk.cabal): package metadata and dependencies
