@@ -1,10 +1,16 @@
 # calculator
 
+<img src="GUI/app-icon.png" width="64" style="border-radius:12px;box-shadow:0 2px 4px rgba(0,0,0,0.2);" align="right">
+
 ![Calculator](GUI/hello-gtk.png)
 
+**Version:** 0.1.2.0
+
+**Download:** [Latest Release](https://github.com/bniladridas/calculator/releases/latest)
+
 | New | Old |
-|-----|-----|
-| <img src="GUI/calculator-gtk4-new.png" width="250"> | <img src="GUI/calculator-gtk4-old.png" width="250"> |
+|:---:|:---:|
+| <img src="GUI/calculator-gtk4-new.png" width="150"> | <img src="GUI/calculator-gtk4-old.png" width="150"> |
 
 You are free to use, modify, and distribute this project.
 
