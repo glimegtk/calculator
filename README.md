@@ -1,6 +1,6 @@
 # calculator
 
-<img src="GUI/app-icon.png" width="64" style="border-radius:12px;box-shadow:0 2px 4px rgba(0,0,0,0.2);" align="right">
+<img src="https://raw.githubusercontent.com/bniladridas/calculator/main/GUI/app-icon.png" width="64" style="border-radius:12px;box-shadow:0 2px 4px rgba(0,0,0,0.2);" align="right">
 
 **Version:** 0.1.2.0
 
@@ -8,7 +8,7 @@
 
 | New | Old |
 |:---:|:---:|
-| <img src="GUI/calculator-gtk4-new.png" width="150"> | <img src="GUI/calculator-gtk4-old.png" width="150"> |
+| <img src="https://raw.githubusercontent.com/bniladridas/calculator/main/GUI/calculator-gtk4-new.png" width="150"> | <img src="https://raw.githubusercontent.com/bniladridas/calculator/main/GUI/calculator-gtk4-old.png" width="150"> |
 
 You are free to use, modify, and distribute this project.
 
