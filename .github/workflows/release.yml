@@ -16,7 +16,7 @@ jobs:
       - name: Setup Haskell
         uses: actions/setup-haskell@v1
         with:
-          ghc-version: '9.14.1'
+          ghc-version: '9.10'
           cabal-version: '3.16.1.0'
 
       - name: Install dependencies
