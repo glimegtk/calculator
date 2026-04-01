@@ -20,6 +20,9 @@ mkdir -p "${RESOURCES_DIR}"
 EXE_PATH=$(cabal exec which hello-gtk 2>/dev/null || echo "dist-newstyle/build/*/ghc-*/hello-gtk-*/x/hello-gtk/build/hello-gtk/hello-gtk")
 cp -r dist-newstyle/build/aarch64-osx/ghc-9.14.1/hello-gtk-0.1.1.0/x/hello-gtk/build/hello-gtk/hello-gtk "${MACOS_DIR}/${APP_NAME}"
 
+# Get version from cabal file
+VERSION=$(grep -E "^version:" hello-gtk.cabal | awk '{print $2}')
+
 # Create Info.plist
 cat > "${CONTENTS_DIR}/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -35,7 +38,7 @@ cat > "${CONTENTS_DIR}/Info.plist" <<EOF
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.1.1.0</string>
+    <string>${VERSION}</string>
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>LSMinimumSystemVersion</key>
