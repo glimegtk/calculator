@@ -1,5 +1,7 @@
 # calculator
 
+[![Release](https://github.com/bniladridas/calculator/actions/workflows/release.yml/badge.svg)](https://github.com/bniladridas/calculator/actions)
+
 <img src="https://raw.githubusercontent.com/bniladridas/calculator/main/GUI/app-icon.png" width="64" style="border-radius:12px;box-shadow:0 2px 4px rgba(0,0,0,0.2);" align="right">
 
 **Version:** 0.1.2.0
