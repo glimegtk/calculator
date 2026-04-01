@@ -5,13 +5,18 @@ license-file:        LICENSE
 author:              Niladri Das
 maintainer:          bniladridas@users.noreply.github.com
 build-type:         Simple
-cabal-version:      >=1.10
+cabal-version:      2.0
 
 executable hello-gtk
   main-is:           Main.hs
+  autogen-modules:   Paths_hello_gtk
+  other-modules:     Paths_hello_gtk
   build-depends:     base >=4.16 && <5
+                    , directory
                     , haskell-gi
                     , haskell-gi-base
+                    , filepath
+                    , gi-gdk4
                     , gi-gtk4
                     , gi-gio
                     , text

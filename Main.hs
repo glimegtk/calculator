@@ -4,11 +4,18 @@
 import Data.GI.Base
 import qualified GI.Gtk as Gtk
 import qualified GI.Gio as Gio
-import Control.Monad (void)
+import qualified GI.Gdk as Gdk
+import Control.Exception (SomeException, try)
+import Control.Monad (filterM, void)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.IORef
+import Data.Version (showVersion)
+import System.Directory (doesFileExist)
+import System.Environment (getExecutablePath)
+import System.FilePath ((</>), takeDirectory)
 import Text.Read (readMaybe)
+import qualified Paths_hello_gtk as Paths
 
 data Operator = Add | Subtract | Multiply | Divide
   deriving (Show, Eq)
@@ -31,11 +38,29 @@ executeOp Divide   = (/)
 main :: IO ()
 main = do
   app <- new Gtk.Application 
-    [ #applicationId := "com.example.Calculator"
+    [ #applicationId := "io.github.bniladridas.calculator"
     , #registerSession := True
     ]
+  installAppActions app
   on app #activate $ activateApp app
   void $ Gio.applicationRun app Nothing
+
+installAppActions :: Gtk.Application -> IO ()
+installAppActions app = do
+  aboutAction <- Gio.simpleActionNew "about" Nothing
+  Gio.onSimpleActionActivate aboutAction $ \_ -> showAboutDialog app
+  Gio.actionMapAddAction app aboutAction
+
+  preferencesAction <- Gio.simpleActionNew "preferences" Nothing
+  Gio.onSimpleActionActivate preferencesAction $ \_ -> showPreferencesWindow app
+  Gio.actionMapAddAction app preferencesAction
+
+  quitAction <- Gio.simpleActionNew "quit" Nothing
+  Gio.onSimpleActionActivate quitAction $ \_ -> #quit app
+  Gio.actionMapAddAction app quitAction
+
+  Gtk.applicationSetAccelsForAction app "app.preferences" ["<Primary>comma"]
+  Gtk.applicationSetAccelsForAction app "app.quit" ["<Primary>q"]
 
 activateApp :: Gtk.Application -> IO ()
 activateApp app = do
@@ -137,6 +162,85 @@ activateApp app = do
     #setLabel displayLabel "0"
 
   #show win
+
+showAboutDialog :: Gtk.Application -> IO ()
+showAboutDialog app = do
+  activeWindow <- Gtk.applicationGetActiveWindow app
+  aboutDialog <- new Gtk.AboutDialog
+    [ #programName := "Calculator"
+    , #version := T.pack (showVersion Paths.version)
+    , #authors := ["Niladri Das"]
+    , #website := "https://github.com/bniladridas/calculator"
+    , #websiteLabel := "GitHub Repository"
+    , #modal := True
+    ]
+
+  case activeWindow of
+    Just window -> #setTransientFor aboutDialog (Just window)
+    Nothing -> return ()
+
+  maybeLogo <- loadAboutLogo
+  case maybeLogo of
+    Just logo -> set aboutDialog [#logo := logo]
+    Nothing -> return ()
+
+  #present aboutDialog
+
+loadAboutLogo :: IO (Maybe Gdk.Texture)
+loadAboutLogo = do
+  iconPaths <- candidateIconPaths
+  existingPaths <- filterM doesFileExist iconPaths
+  loadFirst existingPaths
+  where
+    loadFirst [] = return Nothing
+    loadFirst (path:rest) = do
+      result <- try (Gdk.textureNewFromFilename path) :: IO (Either SomeException Gdk.Texture)
+      case result of
+        Right texture -> return (Just texture)
+        Left _ -> loadFirst rest
+
+candidateIconPaths :: IO [FilePath]
+candidateIconPaths = do
+  executablePath <- getExecutablePath
+  let macOSDir = takeDirectory executablePath
+  let contentsDir = takeDirectory macOSDir
+  return
+    [ contentsDir </> "Resources" </> "icon.png"
+    , "GUI" </> "app-icon.png"
+    , "GUI" </> "hello-gtk.png"
+    ]
+
+showPreferencesWindow :: Gtk.Application -> IO ()
+showPreferencesWindow app = do
+  content <- new Gtk.Box
+    [ #orientation := Gtk.OrientationVertical
+    , #spacing := 12
+    , #marginTop := 20
+    , #marginBottom := 20
+    , #marginStart := 20
+    , #marginEnd := 20
+    ]
+
+  title <- new Gtk.Label [#label := "Settings"]
+  #setHalign title Gtk.AlignStart
+
+  message <- new Gtk.Label [#label := "No configurable settings are available yet."]
+  #setHalign message Gtk.AlignStart
+  #setWrap message True
+
+  #append content title
+  #append content message
+
+  prefsWindow <- new Gtk.ApplicationWindow
+    [ #application := app
+    , #title := "Settings"
+    , #defaultWidth := 360
+    , #defaultHeight := 160
+    , #resizable := False
+    , #child := content
+    ]
+
+  #present prefsWindow
 
 handleInput :: Gtk.Label -> IORef CalcState -> Text -> IO ()
 handleInput display stRef input = do

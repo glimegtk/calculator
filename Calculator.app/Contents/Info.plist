@@ -5,13 +5,15 @@
     <key>CFBundleExecutable</key>
     <string>Calculator</string>
     <key>CFBundleIdentifier</key>
-    <string>com.example.Calculator</string>
+    <string>io.github.bniladridas.calculator</string>
+    <key>CFBundleDisplayName</key>
+    <string>Calculator</string>
     <key>CFBundleName</key>
     <string>Calculator</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.1.1.0</string>
+    <string>0.1.2.0</string>
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>LSMinimumSystemVersion</key>

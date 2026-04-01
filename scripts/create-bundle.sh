@@ -1,29 +1,40 @@
 #!/bin/bash
-# Calculator App Bundle Script
-# Run this to create an app bundle for the calculator
+# Create a macOS app bundle for the calculator.
 
 set -e
 
 APP_NAME="Calculator"
+APP_ID="io.github.bniladridas.calculator"
 BUNDLE_DIR="${APP_NAME}.app"
 CONTENTS_DIR="${BUNDLE_DIR}/Contents"
 MACOS_DIR="${CONTENTS_DIR}/MacOS"
 RESOURCES_DIR="${CONTENTS_DIR}/Resources"
+EXECUTABLE_NAME="hello-gtk"
+ICON_PNG_PATH=""
 
 echo "Building ${APP_NAME}.app bundle..."
 
-# Create bundle directories
-mkdir -p "${MACOS_DIR}"
-mkdir -p "${RESOURCES_DIR}"
+# Recreate the bundle so stale metadata or icons do not leak into new builds.
+rm -rf "${BUNDLE_DIR}"
+mkdir -p "${MACOS_DIR}" "${RESOURCES_DIR}"
 
-# Copy the executable
-EXE_PATH=$(cabal exec which hello-gtk 2>/dev/null || echo "dist-newstyle/build/*/ghc-*/hello-gtk-*/x/hello-gtk/build/hello-gtk/hello-gtk")
-cp -r dist-newstyle/build/aarch64-osx/ghc-9.14.1/hello-gtk-0.1.1.0/x/hello-gtk/build/hello-gtk/hello-gtk "${MACOS_DIR}/${APP_NAME}"
+# Locate the built executable from the current Cabal build output.
+EXE_PATH=$(cabal list-bin "${EXECUTABLE_NAME}" 2>/dev/null || true)
+if [ -z "${EXE_PATH}" ]; then
+    EXE_PATH=$(find dist-newstyle -type f -path "*/build/${EXECUTABLE_NAME}/${EXECUTABLE_NAME}" | sort | tail -n 1)
+fi
+if [ -z "${EXE_PATH}" ]; then
+    echo "Could not find built executable for ${EXECUTABLE_NAME}."
+    echo "Run: cabal build ${EXECUTABLE_NAME}"
+    exit 1
+fi
+cp "${EXE_PATH}" "${MACOS_DIR}/${APP_NAME}"
+chmod +x "${MACOS_DIR}/${APP_NAME}"
 
-# Get version from cabal file
+# Get version from cabal file.
 VERSION=$(grep -E "^version:" hello-gtk.cabal | awk '{print $2}')
 
-# Create Info.plist
+# Create Info.plist.
 cat > "${CONTENTS_DIR}/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -32,7 +43,9 @@ cat > "${CONTENTS_DIR}/Info.plist" <<EOF
     <key>CFBundleExecutable</key>
     <string>${APP_NAME}</string>
     <key>CFBundleIdentifier</key>
-    <string>com.example.Calculator</string>
+    <string>${APP_ID}</string>
+    <key>CFBundleDisplayName</key>
+    <string>${APP_NAME}</string>
     <key>CFBundleName</key>
     <string>${APP_NAME}</string>
     <key>CFBundlePackageType</key>
@@ -47,13 +60,25 @@ cat > "${CONTENTS_DIR}/Info.plist" <<EOF
     <true/>
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.utilities</string>
+    <key>CFBundleIconFile</key>
+    <string>icon.icns</string>
 </dict>
 </plist>
 EOF
 
-# Copy icon (if exists)
-if [ -f "GUI/hello-gtk.png" ]; then
-    cp "GUI/hello-gtk.png" "${RESOURCES_DIR}/icon.png"
+# Copy icon assets for the bundle and About dialog.
+if [ -f "GUI/app-icon.png" ]; then
+    ICON_PNG_PATH="GUI/app-icon.png"
+elif [ -f "GUI/hello-gtk.png" ]; then
+    ICON_PNG_PATH="GUI/hello-gtk.png"
+fi
+
+if [ -f "GUI/icon.icns" ]; then
+    cp "GUI/icon.icns" "${RESOURCES_DIR}/icon.icns"
+fi
+
+if [ -n "${ICON_PNG_PATH}" ]; then
+    cp "${ICON_PNG_PATH}" "${RESOURCES_DIR}/icon.png"
 fi
 
 echo "Bundle created at ${BUNDLE_DIR}"

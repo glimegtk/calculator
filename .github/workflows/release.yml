@@ -22,30 +22,7 @@ jobs:
         run: cabal build hello-gtk
 
       - name: Create app bundle
-        run: |
-          mkdir -p Calculator.app/Contents/MacOS
-          mkdir -p Calculator.app/Contents/Resources
-          EXE_PATH=$(cabal list-bin hello-gtk)
-          cp "$EXE_PATH" Calculator.app/Contents/MacOS/Calculator
-          cp GUI/app-icon.png Calculator.app/Contents/Resources/icon.png
-
-      - name: Create Info.plist
-        run: |
-          VERSION="${{ github.ref_name }}"
-          echo '<?xml version="1.0" encoding="UTF-8"?>' > Calculator.app/Contents/Info.plist
-          echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> Calculator.app/Contents/Info.plist
-          echo '<plist version="1.0">' >> Calculator.app/Contents/Info.plist
-          echo '<dict>' >> Calculator.app/Contents/Info.plist
-          echo '    <key>CFBundleExecutable</key><string>Calculator</string>' >> Calculator.app/Contents/Info.plist
-          echo '    <key>CFBundleIdentifier</key><string>com.example.Calculator</string>' >> Calculator.app/Contents/Info.plist
-          echo '    <key>CFBundleName</key><string>Calculator</string>' >> Calculator.app/Contents/Info.plist
-          echo '    <key>CFBundlePackageType</key><string>APPL</string>' >> Calculator.app/Contents/Info.plist
-          echo "    <key>CFBundleShortVersionString</key><string>${VERSION#v}</string>" >> Calculator.app/Contents/Info.plist
-          echo '    <key>CFBundleVersion</key><string>1</string>' >> Calculator.app/Contents/Info.plist
-          echo '    <key>LSMinimumSystemVersion</key><string>10.15</string>' >> Calculator.app/Contents/Info.plist
-          echo '    <key>NSHighResolutionCapable</key><true/>' >> Calculator.app/Contents/Info.plist
-          echo '</dict>' >> Calculator.app/Contents/Info.plist
-          echo '</plist>' >> Calculator.app/Contents/Info.plist
+        run: ./scripts/create-bundle.sh
 
       - name: Create ZIP
         run: zip -r Calculator.zip Calculator.app
