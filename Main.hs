@@ -38,72 +38,103 @@ activateApp :: Gtk.Application -> IO ()
 activateApp app = do
   box <- new Gtk.Box 
     [ #orientation := Gtk.OrientationVertical
-    , #marginTop := 12
-    , #marginBottom := 12
-    , #marginStart := 12
-    , #marginEnd := 12
+    , #marginTop := 16
+    , #marginBottom := 16
+    , #marginStart := 16
+    , #marginEnd := 16
+    , #spacing := 12
     ]
-
-  entryBuf <- new Gtk.EntryBuffer []
-  entry <- new Gtk.Entry [#buffer := entryBuf]
-  #append box entry
-
-  grid <- new Gtk.Grid [#rowSpacing := 6, #columnSpacing := 6]
-  #append box grid
 
   win <- new Gtk.ApplicationWindow 
     [ #application := app
     , #title := "Calculator"
-    , #defaultWidth := 320
-    , #defaultHeight := 400
+    , #defaultWidth := 350
+    , #defaultHeight := 500
     , #child := box
     ]
 
+  displayBox <- new Gtk.Box
+    [ #orientation := Gtk.OrientationVertical
+    , #valign := Gtk.AlignEnd
+    , #halign := Gtk.AlignFill
+    ]
+
+  displayLabel <- new Gtk.Label [#label := "0"]
+  #setHalign displayLabel Gtk.AlignEnd
+  #setValign displayLabel Gtk.AlignCenter
+  #setHexpand displayLabel True
+  #setSizeRequest displayLabel (-1) 60
+
+  #append displayBox displayLabel
+  #append box displayBox
+
+  sep <- new Gtk.Separator [#marginTop := 8, #marginBottom := 8]
+  #append box sep
+
+  grid <- new Gtk.Grid [#rowSpacing := 8, #columnSpacing := 8]
+  #append box grid
+
   stVar <- newIORef emptyState
 
-  let addButton lbl row col = do
-        btn <- new Gtk.Button [#label := lbl]
+  let addNumButton lbl row col = do
+        btn <- new Gtk.Button 
+          [ #label := lbl
+          , #hexpand := True
+          , #vexpand := True
+          ]
+        on btn #clicked $ handleInput displayLabel stVar lbl
         Gtk.gridAttach grid btn col row 1 1
-        on btn #clicked $ handleInput entryBuf entry stVar lbl
 
   let addOpButton lbl row col op = do
-        btn <- new Gtk.Button [#label := lbl]
+        btn <- new Gtk.Button 
+          [ #label := lbl
+          , #hexpand := True
+          , #vexpand := True
+          ]
+        on btn #clicked $ handleOp displayLabel stVar op
         Gtk.gridAttach grid btn col row 1 1
-        on btn #clicked $ handleOp entryBuf entry stVar op
 
-  addButton "7" 0 0
-  addButton "8" 0 1
-  addButton "9" 0 2
-  addOpButton "/" 0 3 Divide
+  addNumButton "7" 0 0
+  addNumButton "8" 0 1
+  addNumButton "9" 0 2
+  addOpButton "÷" 0 3 Divide
 
-  addButton "4" 1 0
-  addButton "5" 1 1
-  addButton "6" 1 2
-  addOpButton "*" 1 3 Multiply
+  addNumButton "4" 1 0
+  addNumButton "5" 1 1
+  addNumButton "6" 1 2
+  addOpButton "×" 1 3 Multiply
 
-  addButton "1" 2 0
-  addButton "2" 2 1
-  addButton "3" 2 2
-  addOpButton "-" 2 3 Subtract
+  addNumButton "1" 2 0
+  addNumButton "2" 2 1
+  addNumButton "3" 2 2
+  addOpButton "−" 2 3 Subtract
 
-  addButton "0" 3 0
-  addButton "." 3 1
+  addNumButton "0" 3 0
+  addNumButton "." 3 1
   addOpButton "+" 3 2 Add
 
-  eqBtn <- new Gtk.Button [#label := "="]
+  eqBtn <- new Gtk.Button 
+    [ #label := "="
+    , #hexpand := True
+    , #vexpand := True
+    ]
   Gtk.gridAttach grid eqBtn 3 3 1 1
-  on eqBtn #clicked $ handleEquals entryBuf entry stVar
+  on eqBtn #clicked $ handleEquals displayLabel stVar
 
-  clearBtn <- new Gtk.Button [#label := "C"]
+  clearBtn <- new Gtk.Button 
+    [ #label := "C"
+    , #hexpand := True
+    , #vexpand := True
+    ]
   Gtk.gridAttach grid clearBtn 0 4 4 1
   on clearBtn #clicked $ do
     writeIORef stVar emptyState
-    Gtk.entryBufferSetText entryBuf "" (-1)
+    #setLabel displayLabel "0"
 
   #show win
 
-handleInput :: Gtk.EntryBuffer -> Gtk.Entry -> IORef CalcState -> Text -> IO ()
-handleInput entryBuf display stRef input = do
+handleInput :: Gtk.Label -> IORef CalcState -> Text -> IO ()
+handleInput display stRef input = do
   st <- readIORef stRef
   let currentText = calcDisplay st
   let newDisplay = case input of
@@ -112,32 +143,33 @@ handleInput entryBuf display stRef input = do
                else if T.null currentText 
                     then "0." 
                     else T.append currentText input
-        _   -> T.append currentText input
+        "0" | currentText == "0" -> "0"
+        _   -> if currentText == "0" then input else T.append currentText input
   writeIORef stRef st { calcDisplay = newDisplay }
-  Gtk.entryBufferSetText entryBuf newDisplay (-1)
+  #setLabel display newDisplay
 
-handleOp :: Gtk.EntryBuffer -> Gtk.Entry -> IORef CalcState -> Operator -> IO ()
-handleOp entryBuf display stRef op = do
+handleOp :: Gtk.Label -> IORef CalcState -> Operator -> IO ()
+handleOp display stRef op = do
   st <- readIORef stRef
   let currentText = calcDisplay st
   let current = readMaybe (T.unpack currentText) :: Maybe Double
   case (firstOp st, pendingOp st, current) of
     (Nothing, _, Just n) -> do
       writeIORef stRef (st { firstOp = Just n, pendingOp = Just op, calcDisplay = "" })
-      Gtk.entryBufferSetText entryBuf "" (-1)
+      #setLabel display ""
     (Just n, Just prevOp, Just m) -> do
       if prevOp == Divide && m == 0
         then do
-          Gtk.entryBufferSetText entryBuf "Error: division by zero" (-1)
+          #setLabel display "Error: divide by zero"
           writeIORef stRef (st { firstOp = Nothing, pendingOp = Nothing, calcDisplay = "" })
         else do
           let result = executeOp prevOp n m
-          Gtk.entryBufferSetText entryBuf (T.pack (show result)) (-1)
+          #setLabel display (T.pack (show result))
           writeIORef stRef (st { firstOp = Just result, pendingOp = Just op, calcDisplay = "" })
     _ -> return ()
 
-handleEquals :: Gtk.EntryBuffer -> Gtk.Entry -> IORef CalcState -> IO ()
-handleEquals entryBuf display stRef = do
+handleEquals :: Gtk.Label -> IORef CalcState -> IO ()
+handleEquals display stRef = do
   st <- readIORef stRef
   let currentText = calcDisplay st
   let current = readMaybe (T.unpack currentText) :: Maybe Double
@@ -145,11 +177,11 @@ handleEquals entryBuf display stRef = do
     (Just n, Just op, Just m) -> do
       if op == Divide && m == 0
         then do
-          Gtk.entryBufferSetText entryBuf "Error: division by zero" (-1)
+          #setLabel display "Error: divide by zero"
           writeIORef stRef (st { firstOp = Nothing, pendingOp = Nothing, calcDisplay = "" })
         else do
           let result = executeOp op n m
           let resultText = T.pack (show result)
-          Gtk.entryBufferSetText entryBuf resultText (-1)
+          #setLabel display resultText
           writeIORef stRef (emptyState { calcDisplay = resultText })
     _ -> return ()
