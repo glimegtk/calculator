@@ -12,59 +12,53 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Haskell
         uses: haskell/actions@v2
         with:
           ghc-version: '9.14.1'
           cabal-version: '3.16.1.0'
-      
+
       - name: Install dependencies
-        run: |
-          brew install gtk4 gobject-introspection
-      
+        run: brew install gtk4 gobject-introspection
+
       - name: Build
         run: cabal build hello-gtk
-      
+
       - name: Create app bundle
         run: |
           mkdir -p Calculator.app/Contents/MacOS
           mkdir -p Calculator.app/Contents/Resources
-          
-          cp dist-newstyle/build/*/ghc-*/hello-gtk-*/x/hello-gtk/build/hello-gtk/hello-gtk Calculator.app/Contents/MacOS/Calculator
-          cp GUI/hello-gtk.png Calculator.app/Contents/Resources/icon.png
-          
-          cat > Calculator.app/Contents/Info.plist << 'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleExecutable</key>
-    <string>Calculator</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.example.Calculator</string>
-    <key>CFBundleName</key>
-    <string>Calculator</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>0.1.1.0</string>
-    <key>CFBundleVersion</key>
-    <string>1</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>10.15</string>
-    <key>NSHighResolutionCapable</key>
-    <true/>
-</dict>
-</plist>
-EOF
-      
+          EXE_PATH=$(cabal list-bin hello-gtk)
+          cp "$EXE_PATH" Calculator.app/Contents/MacOS/Calculator
+          cp GUI/app-icon.png Calculator.app/Contents/Resources/icon.png
+
+      - name: Create Info.plist
+        run: |
+          echo '<?xml version="1.0" encoding="UTF-8"?>' > Calculator.app/Contents/Info.plist
+          echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> Calculator.app/Contents/Info.plist
+          echo '<plist version="1.0">' >> Calculator.app/Contents/Info.plist
+          echo '<dict>' >> Calculator.app/Contents/Info.plist
+          echo '    <key>CFBundleExecutable</key><string>Calculator</string>' >> Calculator.app/Contents/Info.plist
+          echo '    <key>CFBundleIdentifier</key><string>com.example.Calculator</string>' >> Calculator.app/Contents/Info.plist
+          echo '    <key>CFBundleName</key><string>Calculator</string>' >> Calculator.app/Contents/Info.plist
+          echo '    <key>CFBundlePackageType</key><string>APPL</string>' >> Calculator.app/Contents/Info.plist
+          echo '    <key>CFBundleShortVersionString</key><string>0.1.2.0</string>' >> Calculator.app/Contents/Info.plist
+          echo '    <key>CFBundleVersion</key><string>1</string>' >> Calculator.app/Contents/Info.plist
+          echo '    <key>LSMinimumSystemVersion</key><string>10.15</string>' >> Calculator.app/Contents/Info.plist
+          echo '    <key>NSHighResolutionCapable</key><true/>' >> Calculator.app/Contents/Info.plist
+          echo '</dict>' >> Calculator.app/Contents/Info.plist
+          echo '</plist>' >> Calculator.app/Contents/Info.plist
+
       - name: Create ZIP
         run: zip -r Calculator.zip Calculator.app
-      
+
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
           files: Calculator.zip
+          tag_name: ${{ github.ref_name }}
+          name: Calculator v${{ github.ref_name }}
+          body: Download the macOS app bundle
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
